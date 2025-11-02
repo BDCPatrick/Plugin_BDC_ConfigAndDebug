@@ -27,3 +27,22 @@ UENUM(BlueprintType)
 	 Exec_Release UMETA(DisplayName="Release"),
 	 Exec_Debug UMETA(DisplayName="Debug")
  };
+
+USTRUCT(BlueprintType)
+struct FMonitorInformations
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="BDC|ConfigAndDebug|Monitor Utility")
+	FString MonitorName = FString("");
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="BDC|ConfigAndDebug|Monitor Utility")
+	int32 MonitorIndex = 0; 
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="BDC|ConfigAndDebug|Monitor Utility")
+	int32 MonitorResolutionMaxWidth = 0; 
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="BDC|ConfigAndDebug|Monitor Utility")
+	int32 MonitorResolutionMaxHeight = 0;
+};
