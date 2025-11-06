@@ -53,15 +53,15 @@ public:
 
     /** Sorts an array of int32. */
     UFUNCTION(BlueprintPure, Category = "SortingUtility|Numeric", meta = (Keywords = "sort array int integer order"))
-    static void SortIntArray(const TArray<int32>& InArray, E_IntSortingOrder SortingOrder, bool bReverseString, UPARAM(DisplayName="Sorted Array") TArray<int32>& OutArray);
+    static void SortIntArray(const TArray<int32>& InArray, E_IntSortingOrder SortingOrder, UPARAM(DisplayName="Sorted Array") TArray<int32>& OutArray);
 
     /** Sorts an array of int64. */
     UFUNCTION(BlueprintPure, Category = "SortingUtility|Numeric", meta = (Keywords = "sort array int64 integer order"))
-    static void SortInt64Array(const TArray<int64>& InArray, E_IntSortingOrder SortingOrder, bool bReverseString, UPARAM(DisplayName="Sorted Array") TArray<int64>& OutArray);
+    static void SortInt64Array(const TArray<int64>& InArray, E_IntSortingOrder SortingOrder, UPARAM(DisplayName="Sorted Array") TArray<int64>& OutArray);
 
     /** Sorts an array of float. */
     UFUNCTION(BlueprintPure, Category = "SortingUtility|Numeric", meta = (Keywords = "sort array float order"))
-    static void SortFloatArray(const TArray<float>& InArray, E_IntSortingOrder SortingOrder, bool bReverseString, UPARAM(DisplayName="Sorted Array") TArray<float>& OutArray);
+    static void SortFloatArray(const TArray<float>& InArray, E_IntSortingOrder SortingOrder, UPARAM(DisplayName="Sorted Array") TArray<float>& OutArray);
 
     /** Sorts an array of FVector (Vector 3D). */
     UFUNCTION(BlueprintPure, Category = "SortingUtility|Vector", meta = (Keywords = "sort array vector vector3 order"))

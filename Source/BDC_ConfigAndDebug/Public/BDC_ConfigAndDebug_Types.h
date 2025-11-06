@@ -31,21 +31,16 @@ UENUM(BlueprintType)
  UENUM(BlueprintType)
 enum class E_StringSortingOrder : uint8
 {
-    /** Sorts from A to Z */
-    alphabetical        UMETA(DisplayName = "Alphabetical (A-Z)"),
-    /** Sorts from Z to A */
+    alphabetical	UMETA(DisplayName = "Alphabetical (A-Z)"),
     alphabetical_reversed UMETA(DisplayName = "Alphabetical Reversed (Z-A)")
 };
 
 UENUM(BlueprintType)
 enum class E_IntSortingOrder : uint8
 {
-    /** Sorts from smallest to largest (e.g., 1, 2, 10) */
-    increment           UMETA(DisplayName = "Incrementing (Smallest to Largest)"),
-    /** Sorts from largest to smallest (e.g., 10, 2, 1) */
-    decrement           UMETA(DisplayName = "Decrementing (Largest to Smallest)"),
-    /** Sorts alphabetically based on the string representation (e.g., 1, 10, 11, 2, 20) */
-    alphabeticalBlock   UMETA(DisplayName = "Alphabetical (String Sort)")
+    increment	UMETA(DisplayName = "Incrementing (Smallest to Largest)"),
+    decrement	UMETA(DisplayName = "Decrementing (Largest to Smallest)"),
+    alphabeticalBlock	UMETA(DisplayName = "Alphabetical (String Sort)")
 };
 
 UENUM(BlueprintType)
@@ -84,9 +79,7 @@ enum class E_MarginSortingOrder : uint8
 UENUM(BlueprintType)
 enum class E_ResSortingOrder : uint8
 {
-    /** Sorts from lowest pixel count to highest (e.g., 640x480 -> 1920x1080) */
     LowestToHighest   UMETA(DisplayName = "Lowest to Highest"),
-    /** Sorts from highest pixel count to lowest (e.g., 1920x1080 -> 640x480) */
     HighestToLowest   UMETA(DisplayName = "Highest to Lowest")
 };
 

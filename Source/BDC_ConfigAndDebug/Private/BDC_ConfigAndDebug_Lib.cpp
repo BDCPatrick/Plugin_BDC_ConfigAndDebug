@@ -13,13 +13,11 @@
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Framework/Application/SlateApplication.h"
-#include "HAL/PlatformApplicationMisc.h"
 
 #if PLATFORM_WINDOWS
 	#include "Windows/AllowWindowsPlatformTypes.h"
 	#include "Windows/WindowsHWrapper.h"
-	#include "Windows/HideWindowsPlatformTypes.h"
-	#include <ShellScalingApi.h>
+#include <ShellScalingApi.h>
 #endif
 
 #if PLATFORM_WINDOWS
@@ -36,14 +34,14 @@ namespace BDC_Monitor
 #endif
 
 #if PLATFORM_WINDOWS
-BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC /*hdcMonitor*/, LPRECT /*lprcMonitor*/, LPARAM dwData)
+BOOL CALLBACK MonitorEnumProc(const HMONITOR HMonitor, HDC, LPRECT, const LPARAM DwData)
 {
-    BDC_Monitor::FMonitorEnumData* EnumData = reinterpret_cast<BDC_Monitor::FMonitorEnumData*>(dwData);
+    BDC_Monitor::FMonitorEnumData* EnumData = reinterpret_cast<BDC_Monitor::FMonitorEnumData*>(DwData);
 
     MONITORINFOEXW MonitorInfoEx;
     MonitorInfoEx.cbSize = sizeof(MONITORINFOEXW);
 
-    if (::GetMonitorInfoW(hMonitor, &MonitorInfoEx))
+    if (::GetMonitorInfoW(HMonitor, &MonitorInfoEx))
     {
         FMonitorInformations Monitor;
         Monitor.MonitorName = FString(MonitorInfoEx.szDevice);
@@ -73,12 +71,12 @@ namespace
         HMONITOR Out = nullptr;
     };
 
-    BOOL CALLBACK MonitorEnumIndexProc(HMONITOR hMonitor, HDC /*hdc*/, LPRECT /*rc*/, LPARAM data)
+    BOOL CALLBACK MonitorEnumIndexProc(const HMONITOR HMonitor, HDC, LPRECT, const LPARAM Data)
     {
-        FCaptureIndexData* D = reinterpret_cast<FCaptureIndexData*>(data);
+        FCaptureIndexData* D = reinterpret_cast<FCaptureIndexData*>(Data);
         if (D->Current == D->Target)
         {
-            D->Out = hMonitor;
+            D->Out = HMonitor;
             return 0; // stop
         }
         ++D->Current;
@@ -156,7 +154,6 @@ void UBDC_ConfigAndDebug_Lib::SetSelectedMonitor(int32 NewMonitorIndex)
         return;
     }
 
-    // Capture HMONITOR by index
     FCaptureIndexData Capture{};
     Capture.Target = NewMonitorIndex;
     EnumDisplayMonitors(nullptr, nullptr, MonitorEnumIndexProc, (LPARAM)&Capture);
@@ -258,7 +255,7 @@ void UBDC_ConfigAndDebug_Lib::Index1DToDimension(int32 ArrayPos, const TArray<in
 	OutMultiIndex = ArrayCoords;
 }
 
-void USortingUtilityBPL::SortStringArray(const TArray<FString>& InArray, E_StringSortingOrder SortingOrder, bool bReverseGlyph, TArray<FString>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortStringArray(const TArray<FString>& InArray, E_StringSortingOrder SortingOrder, bool bReverseGlyph, TArray<FString>& OutArray)
 {
     OutArray = InArray;
 
@@ -271,19 +268,19 @@ void USortingUtilityBPL::SortStringArray(const TArray<FString>& InArray, E_Strin
     {
         OutArray.Sort([&GetSortableString](const FString& A, const FString& B)
         {
-            return GetSortableString(A).Compare(GetSortableString(B)) < 0; // A < B
+            return GetSortableString(A).Compare(GetSortableString(B)) < 0;
         });
     }
-    else // alphabetical_reversed
+    else
     {
         OutArray.Sort([&GetSortableString](const FString& A, const FString& B)
         {
-            return GetSortableString(A).Compare(GetSortableString(B)) > 0; // A > B
+            return GetSortableString(A).Compare(GetSortableString(B)) > 0;
         });
     }
 }
 
-void USortingUtilityBPL::SortTextArray(const TArray<FText>& InArray, E_StringSortingOrder SortingOrder, bool bReverseGlyph, TArray<FText>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortTextArray(const TArray<FText>& InArray, E_StringSortingOrder SortingOrder, bool bReverseGlyph, TArray<FText>& OutArray)
 {
     OutArray = InArray;
 
@@ -315,20 +312,20 @@ void USortingUtilityBPL::SortTextArray(const TArray<FText>& InArray, E_StringSor
         {
             OutArray.Sort([](const FText& A, const FText& B)
             {
-                return A.CompareTo(B) < 0; // A < B
+                return A.CompareTo(B) < 0;
             });
         }
         else
         {
             OutArray.Sort([](const FText& A, const FText& B)
             {
-                return A.CompareTo(B) > 0; // A > B
+                return A.CompareTo(B) > 0;
             });
         }
     }
 }
 
-void USortingUtilityBPL::SortNameArray(const TArray<FName>& InArray, E_StringSortingOrder SortingOrder, bool bReverseGlyph, TArray<FName>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortNameArray(const TArray<FName>& InArray, E_StringSortingOrder SortingOrder, bool bReverseGlyph, TArray<FName>& OutArray)
 {
     OutArray = InArray;
 
@@ -360,20 +357,20 @@ void USortingUtilityBPL::SortNameArray(const TArray<FName>& InArray, E_StringSor
         {
             OutArray.Sort([](const FName& A, const FName& B)
             {
-                return A.Compare(B) < 0; // A < B
+                return A.Compare(B) < 0;
             });
         }
         else
         {
             OutArray.Sort([](const FName& A, const FName& B)
             {
-                return A.Compare(B) > 0; // A > B
+                return A.Compare(B) > 0;
             });
         }
     }
 }
 
-void USortingUtilityBPL::SortIntArray(const TArray<int32>& InArray, E_IntSortingOrder SortingOrder, bool bReverseString, TArray<int32>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortIntArray(const TArray<int32>& InArray, E_IntSortingOrder SortingOrder, TArray<int32>& OutArray)
 {
     OutArray = InArray;
 
@@ -387,10 +384,10 @@ void USortingUtilityBPL::SortIntArray(const TArray<int32>& InArray, E_IntSorting
             break;
         case E_IntSortingOrder::alphabeticalBlock:
         {
-            auto GetSortableString = [bReverseString](int32 Input) -> FString
+            auto GetSortableString = [](int32 Input) -> FString
             {
-                FString Str = FString::FromInt(Input);
-                return bReverseString ? Str.Reverse() : Str;
+                const FString Str = FString::FromInt(Input);
+                return Str;
             };
             OutArray.Sort([&GetSortableString](const int32& A, const int32& B)
             {
@@ -401,7 +398,7 @@ void USortingUtilityBPL::SortIntArray(const TArray<int32>& InArray, E_IntSorting
     }
 }
 
-void USortingUtilityBPL::SortInt64Array(const TArray<int64>& InArray, E_IntSortingOrder SortingOrder, bool bReverseString, TArray<int64>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortInt64Array(const TArray<int64>& InArray, E_IntSortingOrder SortingOrder, TArray<int64>& OutArray)
 {
     OutArray = InArray;
 
@@ -415,10 +412,10 @@ void USortingUtilityBPL::SortInt64Array(const TArray<int64>& InArray, E_IntSorti
             break;
         case E_IntSortingOrder::alphabeticalBlock:
         {
-            auto GetSortableString = [bReverseString](int64 Input) -> FString
+            auto GetSortableString = [](int64 Input) -> FString
             {
-                FString Str = FString::FromInt(Input);
-                return bReverseString ? Str.Reverse() : Str;
+                const FString Str = FString::FromInt(Input);
+                return Str;
             };
             OutArray.Sort([&GetSortableString](const int64& A, const int64& B)
             {
@@ -429,7 +426,7 @@ void USortingUtilityBPL::SortInt64Array(const TArray<int64>& InArray, E_IntSorti
     }
 }
 
-void USortingUtilityBPL::SortFloatArray(const TArray<float>& InArray, E_IntSortingOrder SortingOrder, bool bReverseString, TArray<float>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortFloatArray(const TArray<float>& InArray, E_IntSortingOrder SortingOrder, TArray<float>& OutArray)
 {
     OutArray = InArray;
 
@@ -443,10 +440,10 @@ void USortingUtilityBPL::SortFloatArray(const TArray<float>& InArray, E_IntSorti
             break;
         case E_IntSortingOrder::alphabeticalBlock:
         {
-            auto GetSortableString = [bReverseString](float Input) -> FString
+            auto GetSortableString = [](float Input) -> FString
             {
-                FString Str = FString::SanitizeFloat(Input);
-                return bReverseString ? Str.Reverse() : Str;
+                const FString Str = FString::SanitizeFloat(Input);
+                return Str;
             };
             OutArray.Sort([&GetSortableString](const float& A, const float& B)
             {
@@ -457,7 +454,7 @@ void USortingUtilityBPL::SortFloatArray(const TArray<float>& InArray, E_IntSorti
     }
 }
 
-void USortingUtilityBPL::SortVectorArray(const TArray<FVector>& InArray, E_Vec3SortingOrder SortingOrder, TArray<FVector>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortVectorArray(const TArray<FVector>& InArray, E_Vec3SortingOrder SortingOrder, TArray<FVector>& OutArray)
 {
     OutArray = InArray;
     switch (SortingOrder)
@@ -474,7 +471,7 @@ void USortingUtilityBPL::SortVectorArray(const TArray<FVector>& InArray, E_Vec3S
     }
 }
 
-void USortingUtilityBPL::SortVector2Array(const TArray<FVector2D>& InArray, E_Vec2SortingOrder SortingOrder, TArray<FVector2D>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortVector2Array(const TArray<FVector2D>& InArray, E_Vec2SortingOrder SortingOrder, TArray<FVector2D>& OutArray)
 {
     OutArray = InArray;
     switch (SortingOrder)
@@ -488,7 +485,7 @@ void USortingUtilityBPL::SortVector2Array(const TArray<FVector2D>& InArray, E_Ve
     }
 }
 
-void USortingUtilityBPL::SortVector2fArray(const TArray<FVector2f>& InArray, E_Vec2SortingOrder SortingOrder, TArray<FVector2f>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortVector2fArray(const TArray<FVector2f>& InArray, E_Vec2SortingOrder SortingOrder, TArray<FVector2f>& OutArray)
 {
     OutArray = InArray;
     switch (SortingOrder)
@@ -502,7 +499,7 @@ void USortingUtilityBPL::SortVector2fArray(const TArray<FVector2f>& InArray, E_V
     }
 }
 
-void USortingUtilityBPL::SortVector2iArray(const TArray<FIntVector2>& InArray, E_Vec2SortingOrder SortingOrder, TArray<FIntVector2>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortVector2iArray(const TArray<FIntVector2>& InArray, E_Vec2SortingOrder SortingOrder, TArray<FIntVector2>& OutArray)
 {
     OutArray = InArray;
     switch (SortingOrder)
@@ -516,7 +513,7 @@ void USortingUtilityBPL::SortVector2iArray(const TArray<FIntVector2>& InArray, E
     }
 }
 
-void USortingUtilityBPL::SortIntPointArray(const TArray<FIntPoint>& InArray, E_Vec2SortingOrder SortingOrder, TArray<FIntPoint>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortIntPointArray(const TArray<FIntPoint>& InArray, E_Vec2SortingOrder SortingOrder, TArray<FIntPoint>& OutArray)
 {
     OutArray = InArray;
     switch (SortingOrder)
@@ -530,7 +527,7 @@ void USortingUtilityBPL::SortIntPointArray(const TArray<FIntPoint>& InArray, E_V
     }
 }
 
-void USortingUtilityBPL::SortVector4Array(const TArray<FVector4>& InArray, E_Vec4SortingOrder SortingOrder, TArray<FVector4>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortVector4Array(const TArray<FVector4>& InArray, E_Vec4SortingOrder SortingOrder, TArray<FVector4>& OutArray)
 {
     OutArray = InArray;
     switch (SortingOrder)
@@ -550,7 +547,7 @@ void USortingUtilityBPL::SortVector4Array(const TArray<FVector4>& InArray, E_Vec
     }
 }
 
-void USortingUtilityBPL::SortMarginArray(const TArray<FMargin>& InArray, E_MarginSortingOrder SortingOrder, TArray<FMargin>& OutArray)
+void UBDC_ConfigAndDebug_Lib::SortMarginArray(const TArray<FMargin>& InArray, E_MarginSortingOrder SortingOrder, TArray<FMargin>& OutArray)
 {
     OutArray = InArray;
     switch (SortingOrder)
@@ -570,7 +567,7 @@ void USortingUtilityBPL::SortMarginArray(const TArray<FMargin>& InArray, E_Margi
     }
 }
 
-void USortingUtilityBPL::SortResolutionArray(const TArray<FString>& InResolutions, E_ResSortingOrder SortingOrder, TArray<FString>& OutResolutions)
+void UBDC_ConfigAndDebug_Lib::SortResolutionArray(const TArray<FString>& InResolutions, E_ResSortingOrder SortingOrder, TArray<FString>& OutResolutions)
 {
     OutResolutions = InResolutions;
     auto GetTotalPixels = [](const FString& ResString) -> int64
