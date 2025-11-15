@@ -41,5 +41,12 @@ public class BDC_ConfigAndDebug : ModuleRules
 				"RenderCore"
 			}
 		);
+
+		if (Target.Platform == UnrealTargetPlatform.Win64)
+		{
+			PublicAdditionalLibraries.Add("Dxva2.lib");
+			PublicAdditionalLibraries.Add("Setupapi.lib");
+			PublicAdditionalLibraries.Add("Propsys.lib");
+		}
 	}
 }

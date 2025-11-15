@@ -100,4 +100,7 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="BDC|ConfigAndDebug|Monitor Utility")
 	int32 MonitorResolutionMaxHeight = 0;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="BDC|ConfigAndDebug|Monitor Utility")
+	float MonitorAspectRation = 1.6f;
 };

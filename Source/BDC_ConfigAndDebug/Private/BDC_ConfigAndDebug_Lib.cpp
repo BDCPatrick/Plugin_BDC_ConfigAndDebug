@@ -10,191 +10,131 @@
 */
 #include "BDC_ConfigAndDebug_Lib.h"
 
+#include "Framework/Application/SlateApplication.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
-#include "Framework/Application/SlateApplication.h"
+#include "GenericPlatform/GenericApplication.h"
+#include "GameFramework/GameUserSettings.h"
+#include "Widgets/SWindow.h"
+#include "Misc/App.h"
+// #include "Misc/DisplayMetrics.h" // Not required explicitly as GenericApplication provides FDisplayMetrics
 
-#if PLATFORM_WINDOWS
-	#include "Windows/AllowWindowsPlatformTypes.h"
-	#include "Windows/WindowsHWrapper.h"
-#include <ShellScalingApi.h>
-#endif
-
-#if PLATFORM_WINDOWS
-namespace BDC_Monitor
-{
-	struct FMonitorEnumData
-	{
-		TArray<FMonitorInformations>* MonitorInfoArray;
-		int32 CurrentIndex;
-		int32 TargetIndex;
-		FMonitorInformations* TargetMonitorInfo;
-	};
-}
-#endif
-
-#if PLATFORM_WINDOWS
-BOOL CALLBACK MonitorEnumProc(const HMONITOR HMonitor, HDC, LPRECT, const LPARAM DwData)
-{
-    BDC_Monitor::FMonitorEnumData* EnumData = reinterpret_cast<BDC_Monitor::FMonitorEnumData*>(DwData);
-
-    MONITORINFOEXW MonitorInfoEx;
-    MonitorInfoEx.cbSize = sizeof(MONITORINFOEXW);
-
-    if (::GetMonitorInfoW(HMonitor, &MonitorInfoEx))
-    {
-        FMonitorInformations Monitor;
-        Monitor.MonitorName = FString(MonitorInfoEx.szDevice);
-        Monitor.MonitorResolutionMaxWidth = MonitorInfoEx.rcMonitor.right - MonitorInfoEx.rcMonitor.left;
-        Monitor.MonitorResolutionMaxHeight = MonitorInfoEx.rcMonitor.bottom - MonitorInfoEx.rcMonitor.top;
-        Monitor.MonitorIndex = EnumData->CurrentIndex;
-        if (EnumData->TargetMonitorInfo && EnumData->CurrentIndex == EnumData->TargetIndex)
-        {
-            *EnumData->TargetMonitorInfo = Monitor;
-        }
-        if (EnumData->MonitorInfoArray)
-        {
-            EnumData->MonitorInfoArray->Add(Monitor);
-        }
-
-        EnumData->CurrentIndex++;
-    }
-    return 1;
-}
-
+#pragma region MonitorAPI
 namespace
 {
-    struct FCaptureIndexData
+    static float BDC_CalcAspectRounded1(const int32 Width, const int32 Height)
     {
-        int32 Current = 0;
-        int32 Target = 0;
-        HMONITOR Out = nullptr;
-    };
-
-    BOOL CALLBACK MonitorEnumIndexProc(const HMONITOR HMonitor, HDC, LPRECT, const LPARAM Data)
-    {
-        FCaptureIndexData* D = reinterpret_cast<FCaptureIndexData*>(Data);
-        if (D->Current == D->Target)
+        if (Width <= 0 || Height <= 0)
         {
-            D->Out = HMonitor;
-            return 0; // stop
+            return 1.6f;
         }
-        ++D->Current;
-        return 1; // continue
+        const float Ratio = static_cast<float>(Width) / static_cast<float>(Height);
+        return FMath::RoundToFloat(Ratio * 10.0f) / 10.0f;
     }
 }
-#endif
 
 FMonitorInformations UBDC_ConfigAndDebug_Lib::GetMonitorInfoByIndex(int32 OfIndex)
 {
-    FMonitorInformations Result;
+    FMonitorInformations OutInfo;
 
-#if PLATFORM_WINDOWS
-    if (OfIndex < 0)
+    FDisplayMetrics DisplayMetrics;
+    DisplayMetrics.RebuildDisplayMetrics(DisplayMetrics);
+
+    if (!DisplayMetrics.MonitorInfo.IsValidIndex(OfIndex))
     {
-        UE_LOG(LogTemp, Warning, TEXT("GetMonitorInfo: Monitor Index must be non-negative. Index: %d"), OfIndex);
-        return Result;
+        return OutInfo;
     }
 
-    BDC_Monitor::FMonitorEnumData EnumData;
-    EnumData.MonitorInfoArray = nullptr;
-    EnumData.CurrentIndex = 0;
-    EnumData.TargetIndex = OfIndex;
-    EnumData.TargetMonitorInfo = &Result;
+    const FMonitorInfo& Monitor = DisplayMetrics.MonitorInfo[OfIndex];
+    const int32 MaxW = Monitor.MaxResolution.X > 0 ? Monitor.MaxResolution.X : Monitor.NativeWidth;
+    const int32 MaxH = Monitor.MaxResolution.Y > 0 ? Monitor.MaxResolution.Y : Monitor.NativeHeight;
 
-    EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, (LPARAM)&EnumData);
-    
-    if (EnumData.CurrentIndex <= OfIndex)
+    OutInfo.MonitorName = Monitor.Name;
+    OutInfo.MonitorIndex = OfIndex;
+    OutInfo.MonitorResolutionMaxWidth = MaxW;
+    OutInfo.MonitorResolutionMaxHeight = MaxH;
+    if (MaxW <= 0 || MaxH <= 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("GetMonitorInfo: Monitor Index %d not found. Only %d monitors available."), OfIndex, EnumData.CurrentIndex);
-        return FMonitorInformations();
+        OutInfo.MonitorAspectRation = 1.777777777777778f;
+    }else
+    {
+        OutInfo.MonitorAspectRation = static_cast<float>(MaxW) / static_cast<float>(MaxH);
     }
-#else
-    UE_LOG(LogTemp, Warning, TEXT("Monitor functionality is only implemented for Windows (Win64)."));
-#endif
 
-    return Result;
+    return OutInfo;
 }
 
 TArray<FMonitorInformations> UBDC_ConfigAndDebug_Lib::GetAllMonitorInfo()
 {
-    TArray<FMonitorInformations> ResultArray;
+    TArray<FMonitorInformations> Result;
 
-#if PLATFORM_WINDOWS
-    BDC_Monitor::FMonitorEnumData EnumData;
-    EnumData.MonitorInfoArray = &ResultArray;
-    EnumData.CurrentIndex = 0;
-    EnumData.TargetIndex = -1;
-    EnumData.TargetMonitorInfo = nullptr;
+    FDisplayMetrics DisplayMetrics;
+    DisplayMetrics.RebuildDisplayMetrics(DisplayMetrics);
 
-    EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, (LPARAM)&EnumData);
-
-    if (ResultArray.Num() == 0)
+    for (int32 Index = 0; Index < DisplayMetrics.MonitorInfo.Num(); ++Index)
     {
-        UE_LOG(LogTemp, Error, TEXT("GetAllMonitorInfo: Failed to enumerate any monitors."));
-    }
-#else
-    UE_LOG(LogTemp, Warning, TEXT("Monitor functionality is only implemented for Windows (Win64)."));
-#endif
+        const FMonitorInfo& Monitor = DisplayMetrics.MonitorInfo[Index];
+        const int32 MaxW = Monitor.MaxResolution.X > 0 ? Monitor.MaxResolution.X : Monitor.NativeWidth;
+        const int32 MaxH = Monitor.MaxResolution.Y > 0 ? Monitor.MaxResolution.Y : Monitor.NativeHeight;
 
-    return ResultArray;
+        FMonitorInformations Info;
+        Info.MonitorName = Monitor.Name;
+        Info.MonitorIndex = Index;
+        Info.MonitorResolutionMaxWidth = MaxW;
+        Info.MonitorResolutionMaxHeight = MaxH;
+        if (MaxW <= 0 || MaxH <= 0)
+        {
+            Info.MonitorAspectRation = 1.777777777777778f;
+        }else
+        {
+         Info.MonitorAspectRation = static_cast<float>(MaxW) / static_cast<float>(MaxH);
+        }
+
+        Result.Add(Info);
+    }
+
+    return Result;
 }
 
 void UBDC_ConfigAndDebug_Lib::SetSelectedMonitor(int32 NewMonitorIndex)
 {
-#if PLATFORM_WINDOWS
-    if (GIsEditor)
+    FDisplayMetrics DisplayMetrics;
+    DisplayMetrics.RebuildDisplayMetrics(DisplayMetrics);
+    if (!DisplayMetrics.MonitorInfo.IsValidIndex(NewMonitorIndex))
     {
-        UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: No effect in Editor. Use Standalone/Packaged."));
-        return;
-    }
-    if (NewMonitorIndex < 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: Invalid monitor index %d."), NewMonitorIndex);
+        UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: Invalid monitor index %d"), NewMonitorIndex);
         return;
     }
 
-    FCaptureIndexData Capture{};
-    Capture.Target = NewMonitorIndex;
-    EnumDisplayMonitors(nullptr, nullptr, MonitorEnumIndexProc, (LPARAM)&Capture);
-    if (!Capture.Out)
+    const FMonitorInfo& Target = DisplayMetrics.MonitorInfo[NewMonitorIndex];
+    const int32 WindowPosX = Target.WorkArea.Left;
+    const int32 WindowPosY = Target.WorkArea.Top;
+
+    TSharedPtr<SWindow> GameWin;
+    if (GEngine && GEngine->GameViewport)
     {
-        UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: Monitor index %d not found."), NewMonitorIndex);
+        GameWin = GEngine->GameViewport->GetWindow();
+    }
+    if (!GameWin.IsValid())
+    {
+        GameWin = FSlateApplication::Get().GetActiveTopLevelWindow();
+    }
+    if (!GameWin.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: Game window not found"));
         return;
     }
 
-    MONITORINFOEXW Mi{};
-    Mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!::GetMonitorInfoW(Capture.Out, &Mi))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: GetMonitorInfoW failed for index %d."), NewMonitorIndex);
-        return;
-    }
+    const EWindowMode::Type CurrentWindowMode = GameWin->GetWindowMode();
+    GameWin->SetWindowMode(EWindowMode::Windowed);
+    GameWin->MoveWindowTo(FVector2D((float)WindowPosX, (float)WindowPosY));
+    GameWin->SetWindowMode(CurrentWindowMode);
 
-    TSharedPtr<SWindow> GameWindow = GEngine && GEngine->GameViewport ? GEngine->GameViewport->GetWindow() : nullptr;
-    if (!GameWindow.IsValid())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: Game window not valid."));
-        return;
-    }
-
-    const int32 NewX = Mi.rcMonitor.left;
-    const int32 NewY = Mi.rcMonitor.top;
-    HWND hWnd = static_cast<HWND>(GameWindow->GetNativeWindow()->GetOSWindowHandle());
-    if (hWnd)
-    {
-        ::SetWindowPos(hWnd, nullptr, NewX, NewY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
-        UE_LOG(LogTemp, Display, TEXT("SetSelectedMonitor: Moved window to monitor %d at (%d,%d)."), NewMonitorIndex, NewX, NewY);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: OS window handle invalid."));
-    }
-#else
-    UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor is only implemented for Windows (Win64)."));
-#endif
+    UE_LOG(LogTemp, Display, TEXT("SetSelectedMonitor: Switched to monitor %d at (%d,%d)."), NewMonitorIndex, WindowPosX, WindowPosY);
 }
+#pragma endregion
 
+#pragma region ArrayStuff
 void UBDC_ConfigAndDebug_Lib::DimensionTo1D(const TArray<int32>& ArrayCoords, const TArray<int32>& DimensionSizes, int32& Out1DIndex)
 {
 	if (ArrayCoords.Num() != DimensionSizes.Num())
@@ -609,3 +549,4 @@ void UBDC_ConfigAndDebug_Lib::SortResolutionArray(const TArray<FString>& InResol
         });
     }
 }
+#pragma endregion
