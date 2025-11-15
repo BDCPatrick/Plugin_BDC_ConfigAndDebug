@@ -1,3 +1,5 @@
+![Thumbnail](https://github.com/BDCPatrick/BDC_ConfigAndDebug/blob/main/Resources/BDC_Design_ConfigAndDebug_Thumb.png?raw=true)
+
 ![OverviewImage](https://github.com/BDCPatrick/BDC_ConfigAndDebug/blob/main/Resources/ConfigAndDebugOverview.png)
 
 # BDC_ConfigAndSetup
