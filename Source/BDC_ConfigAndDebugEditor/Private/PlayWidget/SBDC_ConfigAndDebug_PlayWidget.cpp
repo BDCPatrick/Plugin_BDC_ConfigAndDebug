@@ -24,6 +24,7 @@ void SBDC_ConfigAndDebug_PlayWidget::Construct(const FArguments& InArgs)
     ChildSlot
     [
         SNew(SHorizontalBox)
+		
         + SHorizontalBox::Slot()
         .AutoWidth()
         .VAlign(VAlign_Center)
@@ -32,19 +33,36 @@ void SBDC_ConfigAndDebug_PlayWidget::Construct(const FArguments& InArgs)
             SNew(STextBlock)
             .Text(FText::FromString(TEXT("Mode:")))
         ]
+		
         + SHorizontalBox::Slot()
         .AutoWidth()
         .VAlign(VAlign_Center)
         [
-            SAssignNew(ComboBox, SComboBox<TSharedPtr<ENum_ProjectSetupType>>)
-            .OptionsSource(&ComboBoxOptions)
-            .OnSelectionChanged(this, &SBDC_ConfigAndDebug_PlayWidget::OnSelectionChanged)
-            .OnGenerateWidget(this, &SBDC_ConfigAndDebug_PlayWidget::OnGenerateWidget)
-            .Content()
-            [
-                SNew(STextBlock)
-                .Text(this, &SBDC_ConfigAndDebug_PlayWidget::GetCurrentItemLabel)
-            ]
+			+ SNew(SVerticalBox)
+			
+			+ SVerticalBox::Slot()
+			.Autoheight()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Top)
+			[
+				// TODO: GameplayTagContainer Selector, storing selected tags in UBDC_ConfigAndDebug_Settings > CurrentPlayStateTags
+			]
+			
+			+ SVerticalBox::Slot()
+			.Autoheight()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Bottom)
+			[
+				SAssignNew(ComboBox, SComboBox<TSharedPtr<ENum_ProjectSetupType>>)
+				.OptionsSource(&ComboBoxOptions)
+				.OnSelectionChanged(this, &SBDC_ConfigAndDebug_PlayWidget::OnSelectionChanged)
+				.OnGenerateWidget(this, &SBDC_ConfigAndDebug_PlayWidget::OnGenerateWidget)
+				.Content()
+				[
+					SNew(STextBlock)
+					.Text(this, &SBDC_ConfigAndDebug_PlayWidget::GetCurrentItemLabel)
+				]
+			]
         ]
     ];
 }

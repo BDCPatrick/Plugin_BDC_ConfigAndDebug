@@ -22,6 +22,7 @@ UBDC_ConfigAndDebug_Settings::UBDC_ConfigAndDebug_Settings()
 	CategoryName = TEXT("Plugins");
 	SectionName = TEXT("BDC Config and Debug");
 	
+	CurrentPlayStateTags = FGameplayTagContainer();
 	CurrentPlayState = ENum_ProjectSetupType::Setup_Debug;
 	OverlayHotkey = EKeys::Three;
 }

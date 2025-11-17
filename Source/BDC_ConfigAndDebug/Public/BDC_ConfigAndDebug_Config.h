@@ -109,7 +109,7 @@ public:
 	};
 	
 	UFUNCTION(BlueprintCallable, Category = "BDC|Config and Debug", meta = (DisplayName = "Get Play-Setup", Keywords = "Play Setup", ExpandEnumAsExecs = "OutExec"))
-	static void GetCurrentPlaySetup(ENum_ProjectSetupOutExec& OutExec);
+	static void GetCurrentPlaySetup(ENum_ProjectSetupOutExec& OutExec, FGameplayTagContainer& StateTags);
 
 	//~ Begin Setters (Editor Only)
 	// =================================================================================================
@@ -191,6 +191,5 @@ public:
 	/** Sets whether the game waits for startup movies to complete. (Editor Only) */
 	UFUNCTION(BlueprintCallable, Category = "BDC|Config And Debug|Setters|Movies", meta = (DisplayName = "Set Project Movies Wait For Completion", Keywords = "project settings movie wait complete"))
 	static void SetProjectMoviesWaitForCompletion(bool bNewValue);
-
 #endif 
 };

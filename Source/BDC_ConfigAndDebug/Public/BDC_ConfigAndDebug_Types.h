@@ -82,6 +82,41 @@ enum class E_ResSortingOrder : uint8
     LowestToHighest   UMETA(DisplayName = "Lowest to Highest"),
     HighestToLowest   UMETA(DisplayName = "Highest to Lowest")
 };
+ 
+ UENUM(BlueprintType)
+ enum class ENum_StringCheck : uint8
+ {
+	 StringHasSubstring UMETA(DisplayName="Contains Substring?"),
+	 StringIsNumeric UMETA(DisplayName="Is Numeric only?"),
+	 StringIsAlphabetical UMETA(DisplayName="is Alphabetical only?"),
+	 StringIsSpecial UMETA(DisplayName="is Special only?"),
+	 StringIsAlphabeticalNumeric UMETA(DisplayName="is Alphabetical & Numeric only?"),
+	 StringIsAlphabeticalSpecial UMETA(DisplayName="is Alphabetical & Special only?"),
+	 StringIsNumericSpecial UMETA(DisplayName="is Numeric & Special only?"),
+	 StringIsURL UMETA(DisplayName="is URL?"),
+	 StringHasNumeric UMETA(DisplayName="Contains Numeric?"),
+	 StringHasAlphabetic UMETA(DisplayName="Contains Alphabetical?"),
+	 StringHasSpecial UMETA(DisplayName="Contains Special Glyphs?"),
+	 StringHasUppercase UMETA(DisplayName="Contains Uppercase?"),
+	 StringHasLowercase UMETA(DisplayName="Contains Lowercase?")
+ };
+ 
+ UENUM(BlueprintType)
+ enum class ENum_StringReplace : uint8
+ {
+	 StringRepAll UMETA(DisplayName="All occurences"),
+	 StringRepOnlyFirst UMETA(DisplayName="Only first occurence"),
+	 StringRepOnlyLast UMETA(DisplayName="Only last occurence"),
+	 StringRepSkip UMETA(DisplayName="Skip X occurences")
+ };
+ 
+ UENUM(BlueprintType)
+ enum class ENum_StringSort : uint8
+ {
+	 StringSortFull UMETA(DisplayName="Full"),
+	 StringSortSentence UMETA(DisplayName="Reverse"), //Sentence stops at "." or ";"
+	 StringSortWord UMETA(DisplayName="Word") // Word stops at " " - space glyph
+ };
 
 USTRUCT(BlueprintType)
 struct FMonitorInformations

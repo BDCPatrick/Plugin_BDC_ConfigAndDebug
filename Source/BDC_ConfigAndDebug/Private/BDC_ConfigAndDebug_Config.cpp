@@ -212,12 +212,14 @@ void UBDC_ConfigAndDebug_Config::GetProjectMoviesWaitForCompletion(bool& Value)
 	}
 }
 
-void UBDC_ConfigAndDebug_Config::GetCurrentPlaySetup(ENum_ProjectSetupOutExec& OutExec)
+void UBDC_ConfigAndDebug_Config::GetCurrentPlaySetup(ENum_ProjectSetupOutExec& OutExec, FGameplayTagContainer& StateTags)
 {
 	if (!IsPlayInEditor()) {
 		OutExec = ENum_ProjectSetupOutExec::Exec_Release;
 		return;
 	}
+	
+	//TODO: Return the UBDC_ConfigAndDebug_Settings.CurrentPlayStateTags in StateTags
 
 	if (const UBDC_ConfigAndDebug_Settings* Settings = GetDefault<UBDC_ConfigAndDebug_Settings>())
 	{

@@ -27,6 +27,9 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = "Game Play Mode")
 	ENum_ProjectSetupType CurrentPlayState;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Game Play Mode")
+	FGameplayTagContainer CurrentPlayStateTags;
 	
 	UPROPERTY(Config, EditAnywhere, Category = "Debug Overlay")
 	FKey OverlayHotkey;
