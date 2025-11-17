@@ -115,7 +115,7 @@ enum class E_ResSortingOrder : uint8
  {
 	 StringSortFull UMETA(DisplayName="Full"),
 	 StringSortSentence UMETA(DisplayName="Reverse"), //Sentence stops at "." or ";"
-	 StringSortWord UMETA(DisplayName="Word") // Word stops at " " - space glyph
+	 StringSortWord UMETA(DisplayName="Word") // Word stops at " ", "." or and other delimeter glyph
  };
 
 USTRUCT(BlueprintType)
@@ -143,8 +143,8 @@ public:
 USTRUCT()
 struct FPaletteOfColors
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, Category = "Palette")
-	TArray<FLinearColor> ColorsOfPalette;
-}
+    UPROPERTY(EditAnywhere, Category = "Palette")
+    TArray<FLinearColor> ColorsOfPalette;
+};

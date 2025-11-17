@@ -12,6 +12,7 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleInterface.h"
 #include "Framework/Commands/UICommandList.h"
+class FColorPickerArgs;
 
 class SBDC_ConfigAndDebug_OverlayWidget;
 class IInputProcessor;
@@ -34,6 +35,4 @@ private:
 	FKey OverlayKey;
 	TSharedPtr<IInputProcessor> OverlayInputProcessor;
 	TSharedPtr<SOverlay> OverlayContainer;
-	FDelegateHandle CustomColorPickerCreationHandle;
-	TSharedRef<SWidget> CreateCustomColorPicker(const TSharedRef<FColorPickerArgs>& Args);
 };

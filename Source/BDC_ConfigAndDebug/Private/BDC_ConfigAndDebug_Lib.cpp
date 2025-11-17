@@ -16,29 +16,15 @@
 #include "GenericPlatform/GenericApplication.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Widgets/SWindow.h"
-#include "Misc/App.h"
-// #include "Misc/DisplayMetrics.h" // Not required explicitly as GenericApplication provides FDisplayMetrics
+#include "Internationalization/Regex.h"
 
 #pragma region MonitorAPI
-namespace
-{
-    static float BDC_CalcAspectRounded1(const int32 Width, const int32 Height)
-    {
-        if (Width <= 0 || Height <= 0)
-        {
-            return 1.6f;
-        }
-        const float Ratio = static_cast<float>(Width) / static_cast<float>(Height);
-        return FMath::RoundToFloat(Ratio * 10.0f) / 10.0f;
-    }
-}
-
 FMonitorInformations UBDC_ConfigAndDebug_Lib::GetMonitorInfoByIndex(int32 OfIndex)
 {
     FMonitorInformations OutInfo;
 
     FDisplayMetrics DisplayMetrics;
-    DisplayMetrics.RebuildDisplayMetrics(DisplayMetrics);
+    FSlateApplication::Get().GetDisplayMetrics(DisplayMetrics);
 
     if (!DisplayMetrics.MonitorInfo.IsValidIndex(OfIndex))
     {
@@ -69,7 +55,7 @@ TArray<FMonitorInformations> UBDC_ConfigAndDebug_Lib::GetAllMonitorInfo()
     TArray<FMonitorInformations> Result;
 
     FDisplayMetrics DisplayMetrics;
-    DisplayMetrics.RebuildDisplayMetrics(DisplayMetrics);
+    FSlateApplication::Get().GetDisplayMetrics(DisplayMetrics);
 
     for (int32 Index = 0; Index < DisplayMetrics.MonitorInfo.Num(); ++Index)
     {
@@ -99,7 +85,7 @@ TArray<FMonitorInformations> UBDC_ConfigAndDebug_Lib::GetAllMonitorInfo()
 void UBDC_ConfigAndDebug_Lib::SetSelectedMonitor(int32 NewMonitorIndex)
 {
     FDisplayMetrics DisplayMetrics;
-    DisplayMetrics.RebuildDisplayMetrics(DisplayMetrics);
+    FSlateApplication::Get().GetDisplayMetrics(DisplayMetrics);
     if (!DisplayMetrics.MonitorInfo.IsValidIndex(NewMonitorIndex))
     {
         UE_LOG(LogTemp, Warning, TEXT("SetSelectedMonitor: Invalid monitor index %d"), NewMonitorIndex);
@@ -131,6 +117,347 @@ void UBDC_ConfigAndDebug_Lib::SetSelectedMonitor(int32 NewMonitorIndex)
     GameWin->SetWindowMode(CurrentWindowMode);
 
     UE_LOG(LogTemp, Display, TEXT("SetSelectedMonitor: Switched to monitor %d at (%d,%d)."), NewMonitorIndex, WindowPosX, WindowPosY);
+}
+#pragma endregion
+
+#pragma region StringSystem
+static bool BDC_IsAlpha(const TCHAR C)
+{
+    return FChar::IsAlpha(C);
+}
+
+static bool BDC_IsDigit(const TCHAR C)
+{
+    return FChar::IsDigit(C);
+}
+
+static bool BDC_IsAlnum(const TCHAR C)
+{
+    return FChar::IsAlpha(C) || FChar::IsDigit(C);
+}
+
+static void BDC_ShuffleCharsInIndices(const TArray<int32>& Indices, FString& InOut)
+{
+    if (Indices.Num() <= 1)
+    {
+        return;
+    }
+    TArray<TCHAR> Values;
+    Values.Reserve(Indices.Num());
+    for (int32 Idx : Indices) { Values.Add(InOut[Idx]); }
+
+    FRandomStream Rng;
+    Rng.Initialize((int32)FPlatformTime::Cycles());
+    for (int32 i = Values.Num() - 1; i > 0; --i)
+    {
+        const int32 j = Rng.RandRange(0, i);
+        if (i != j)
+        {
+            Swap(Values[i], Values[j]);
+        }
+    }
+    for (int32 k = 0; k < Indices.Num(); ++k)
+    {
+        InOut[Indices[k]] = Values[k];
+    }
+}
+
+void UBDC_ConfigAndDebug_Lib::StringAdvancedCheck(FString Input, ENum_StringCheck CheckupType, FString Substring, bool bUseCaseSensitive, bool bSearchFromEnd, bool& bResult, FString& Output)
+{
+    Output = Input;
+    bResult = false;
+    const ESearchCase::Type SearchCase = bUseCaseSensitive ? ESearchCase::CaseSensitive : ESearchCase::IgnoreCase;
+
+    switch (CheckupType)
+    {
+        case ENum_StringCheck::StringHasSubstring:
+        {
+            if (Substring.Len() == 0)
+            {
+                bResult = true;
+            }
+            else
+            {
+                const int32 FoundAt = Input.Find(Substring, SearchCase, bSearchFromEnd ? ESearchDir::FromEnd : ESearchDir::FromStart);
+                bResult = FoundAt != INDEX_NONE;
+            }
+            break;
+        }
+        case ENum_StringCheck::StringIsNumeric:
+        {
+            if (Input.Len() == 0) { bResult = false; break; }
+            bResult = true;
+            for (const TCHAR C : Input) { if (!BDC_IsDigit(C)) { bResult = false; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringIsAlphabetical:
+        {
+            if (Input.Len() == 0) { bResult = false; break; }
+            bResult = true;
+            for (const TCHAR C : Input) { if (!BDC_IsAlpha(C)) { bResult = false; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringIsSpecial:
+        {
+            if (Input.Len() == 0) { bResult = false; break; }
+            bResult = true;
+            for (const TCHAR C : Input) { if (BDC_IsAlnum(C) || C == TEXT(' ')) { bResult = false; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringIsAlphabeticalNumeric:
+        {
+            if (Input.Len() == 0) { bResult = false; break; }
+            bResult = true;
+            for (const TCHAR C : Input) { if (!BDC_IsAlnum(C)) { bResult = false; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringIsAlphabeticalSpecial:
+        {
+            if (Input.Len() == 0) { bResult = false; break; }
+            bResult = true;
+            for (const TCHAR C : Input) { if (!(BDC_IsAlpha(C) || (!BDC_IsAlnum(C) && C != TEXT(' ')))) { bResult = false; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringIsNumericSpecial:
+        {
+            if (Input.Len() == 0) { bResult = false; break; }
+            bResult = true;
+            for (const TCHAR C : Input) { if (!(BDC_IsDigit(C) || (!BDC_IsAlnum(C) && C != TEXT(' ')))) { bResult = false; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringIsURL:
+        {
+            const FRegexPattern Pattern(TEXT("^(http?|https?|ftp)://"));
+            FRegexMatcher Matcher(Pattern, Input);
+            bResult = Matcher.FindNext();
+            break;
+        }
+        case ENum_StringCheck::StringHasNumeric:
+        {
+            bResult = false; for (const TCHAR C : Input) { if (BDC_IsDigit(C)) { bResult = true; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringHasAlphabetic:
+        {
+            bResult = false; for (const TCHAR C : Input) { if (BDC_IsAlpha(C)) { bResult = true; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringHasSpecial:
+        {
+            bResult = false; for (const TCHAR C : Input) { if (!BDC_IsAlnum(C) && C != TEXT(' ')) { bResult = true; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringHasUppercase:
+        {
+            bResult = false; for (const TCHAR C : Input) { if (FChar::IsUpper(C)) { bResult = true; break; } }
+            break;
+        }
+        case ENum_StringCheck::StringHasLowercase:
+        {
+            bResult = false; for (const TCHAR C : Input) { if (FChar::IsLower(C)) { bResult = true; break; } }
+            break;
+        }
+    }
+}
+
+void UBDC_ConfigAndDebug_Lib::StringAdvancedReplace(FString Input, ENum_StringReplace ReplaceType, FString SearchFor, FString ReplaceWith, bool bUseCaseSensitive, bool bStartFromEnd, int32 SkipCases, FString& Output)
+{
+    Output = Input;
+    if (SearchFor.Len() == 0)
+    {
+        return;
+    }
+    if (SkipCases < 0)
+    {
+        SkipCases = 0;
+    }
+
+    const ESearchCase::Type SearchCase = bUseCaseSensitive ? ESearchCase::CaseSensitive : ESearchCase::IgnoreCase;
+
+    auto ReplaceAtIndex = [&](int32 Index)
+    {
+        if (Index == INDEX_NONE) { return; }
+        Output = Output.Left(Index) + ReplaceWith + Output.Mid(Index + SearchFor.Len());
+    };
+
+    switch (ReplaceType)
+    {
+        case ENum_StringReplace::StringRepAll:
+        {
+            Output = Output.Replace(*SearchFor, *ReplaceWith, SearchCase);
+            break;
+        }
+        case ENum_StringReplace::StringRepOnlyFirst:
+        {
+            const int32 Index = Output.Find(SearchFor, SearchCase, bStartFromEnd ? ESearchDir::FromEnd : ESearchDir::FromStart);
+            ReplaceAtIndex(Index);
+            break;
+        }
+        case ENum_StringReplace::StringRepOnlyLast:
+        {
+            const int32 Index = Output.Find(SearchFor, SearchCase, ESearchDir::FromEnd);
+            ReplaceAtIndex(Index);
+            break;
+        }
+        case ENum_StringReplace::StringRepSkip:
+        {
+            int32 Count = 0;
+            if (!bStartFromEnd)
+            {
+                int32 Pos = -1;
+                while (true)
+                {
+                    const int32 Next = Output.Find(SearchFor, SearchCase, ESearchDir::FromStart, Pos + 1);
+                    if (Next == INDEX_NONE) { break; }
+                    if (Count == SkipCases)
+                    {
+                        ReplaceAtIndex(Next);
+                        break;
+                    }
+                    ++Count;
+                    Pos = Next;
+                }
+            }
+            else
+            {
+                int32 Pos = Output.Len();
+                while (true)
+                {
+                    const int32 Next = Output.Find(SearchFor, SearchCase, ESearchDir::FromEnd, Pos);
+                    if (Next == INDEX_NONE) { break; }
+                    if (Count == SkipCases)
+                    {
+                        ReplaceAtIndex(Next);
+                        break;
+                    }
+                    ++Count;
+                    Pos = Next - 1;
+                }
+            }
+            break;
+        }
+    }
+}
+
+void UBDC_ConfigAndDebug_Lib::StringReverse(FString Input, ENum_StringSort ReverseType, FString& Output)
+{
+    Output = Input;
+    switch (ReverseType)
+    {
+        case ENum_StringSort::StringSortFull:
+        {
+            Output = Input.Reverse();
+            break;
+        }
+        case ENum_StringSort::StringSortSentence:
+        {
+            FString Result;
+            Result.Reserve(Input.Len());
+            int32 Start = 0;
+            for (int32 i = 0; i < Input.Len(); ++i)
+            {
+                const TCHAR C = Input[i];
+                if (C == TEXT('.') || C == TEXT(';'))
+                {
+                    const FString Segment = Input.Mid(Start, i - Start);
+                    Result += Segment.Reverse();
+                    Result.AppendChar(C);
+                    Start = i + 1;
+                }
+            }
+            if (Start <= Input.Len() - 1)
+            {
+                const FString Tail = Input.Mid(Start);
+                Result += Tail.Reverse();
+            }
+            Output = Result;
+            break;
+        }
+        case ENum_StringSort::StringSortWord:
+        {
+            FString Result;
+            Result.Reserve(Input.Len());
+            int32 Start = 0;
+            for (int32 i = 0; i < Input.Len(); ++i)
+            {
+                const TCHAR C = Input[i];
+                if (C == TEXT(' '))
+                {
+                    const FString Segment = Input.Mid(Start, i - Start);
+                    Result += Segment.Reverse();
+                    Result.AppendChar(TEXT(' '));
+                    Start = i + 1;
+                }
+            }
+            if (Start <= Input.Len() - 1)
+            {
+                const FString Tail = Input.Mid(Start);
+                Result += Tail.Reverse();
+            }
+            Output = Result;
+            break;
+        }
+    }
+}
+
+void UBDC_ConfigAndDebug_Lib::StringJiggle(FString Input, ENum_StringSort JiggleType, FString& Output)
+{
+    Output = Input;
+
+    auto JiggleRange = [&](int32 Begin, int32 End)
+    {
+        if (Begin >= End) { return; }
+        TArray<int32> ShufflableIndices;
+        for (int32 i = Begin; i < End; ++i)
+        {
+            const TCHAR C = Output[i];
+            if (C == TEXT(' ') || C == TEXT('.') || C == TEXT(';'))
+            {
+                continue;
+            }
+            ShufflableIndices.Add(i);
+        }
+        BDC_ShuffleCharsInIndices(ShufflableIndices, Output);
+    };
+
+    switch (JiggleType)
+    {
+        case ENum_StringSort::StringSortFull:
+        {
+            JiggleRange(0, Output.Len());
+            break;
+        }
+        case ENum_StringSort::StringSortSentence:
+        {
+            int32 Start = 0;
+            for (int32 i = 0; i < Output.Len(); ++i)
+            {
+                const TCHAR C = Output[i];
+                if (C == TEXT('.') || C == TEXT(';'))
+                {
+                    JiggleRange(Start, i);
+                    Start = i + 1;
+                }
+            }
+            JiggleRange(Start, Output.Len());
+            break;
+        }
+        case ENum_StringSort::StringSortWord:
+        {
+            int32 Start = 0;
+            for (int32 i = 0; i < Output.Len(); ++i)
+            {
+                const TCHAR C = Output[i];
+                if (C == TEXT(' '))
+                {
+                    JiggleRange(Start, i);
+                    Start = i + 1;
+                }
+            }
+            JiggleRange(Start, Output.Len());
+            break;
+        }
+    }
 }
 #pragma endregion
 

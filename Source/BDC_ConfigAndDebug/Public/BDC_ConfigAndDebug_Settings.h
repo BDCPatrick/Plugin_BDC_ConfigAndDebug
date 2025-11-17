@@ -33,17 +33,6 @@ public:
 	
 	UPROPERTY(Config, EditAnywhere, Category = "Debug Overlay")
 	FKey OverlayHotkey;
-	
-    UPROPERTY(EditAnywhere, Config, Category = "Free Palettes", meta = (AllowPrivateAccess = "true"))
-    TArray<FLinearColor> FreeProjectColors;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Named Palettes", meta = (AllowPrivateAccess = "true"))
-    TMap<FName, FPaletteOfColors> ProjectPalettes;
 
 	void SaveToProjectDefaultConfig();
-	
-    static void GetProjectPaletteSettings(const UBDC_ConfigAndDebug_Settings*& ReturnedSettings)
-    {
-        ReturnedSettings = GetDefault<UBDC_ConfigAndDebug_Settings>();
-    }
 };

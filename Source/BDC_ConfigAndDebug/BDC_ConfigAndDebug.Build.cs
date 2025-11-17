@@ -20,7 +20,8 @@ public class BDC_ConfigAndDebug : ModuleRules
 			{
 				"Core",
 				"Engine",
-				"InputCore"
+				"InputCore",
+				"GameplayTags"
 			}
 		);
 			

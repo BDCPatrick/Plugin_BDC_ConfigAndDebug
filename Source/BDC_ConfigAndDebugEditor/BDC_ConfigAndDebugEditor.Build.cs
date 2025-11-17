@@ -38,7 +38,9 @@ public class BDC_ConfigAndDebugEditor : ModuleRules
                 "LevelEditor",
                 "ToolMenus",
                 "UnrealEd",
-                "InputCore"
+                "InputCore",
+                "GameplayTags",
+                "GameplayTagsEditor"
             }
         );
     }

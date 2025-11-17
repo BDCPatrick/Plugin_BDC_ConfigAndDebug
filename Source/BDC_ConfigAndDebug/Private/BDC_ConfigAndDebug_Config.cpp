@@ -14,6 +14,7 @@
 #include "Engine/UserInterfaceSettings.h"
 #include "BDC_ConfigAndDebug_Settings.h"
 
+// =================================================================================================
 //~ Getters
 // =================================================================================================
 
@@ -214,40 +215,40 @@ void UBDC_ConfigAndDebug_Config::GetProjectMoviesWaitForCompletion(bool& Value)
 
 void UBDC_ConfigAndDebug_Config::GetCurrentPlaySetup(ENum_ProjectSetupOutExec& OutExec, FGameplayTagContainer& StateTags)
 {
-	if (!IsPlayInEditor()) {
-		OutExec = ENum_ProjectSetupOutExec::Exec_Release;
-		return;
-	}
-	
-	//TODO: Return the UBDC_ConfigAndDebug_Settings.CurrentPlayStateTags in StateTags
-
-	if (const UBDC_ConfigAndDebug_Settings* Settings = GetDefault<UBDC_ConfigAndDebug_Settings>())
-	{
-		switch(Settings->CurrentPlayState)
-		{
-			case ENum_ProjectSetupType::Setup_Release:
-			{
-				OutExec = ENum_ProjectSetupOutExec::Exec_Release;
-				break;
-			}
-			case ENum_ProjectSetupType::Setup_Debug:
-			{
-				OutExec = ENum_ProjectSetupOutExec::Exec_Debug;
-				break;
-			}
-			case ENum_ProjectSetupType::Setup_DebugNo:
-			{
-				OutExec = ENum_ProjectSetupOutExec::Exec_Debug;
-				break;
-			}
-			default:
-			{
-				break;
-			}
-		}
-	}
+    if (!IsPlayInEditor()) {
+        OutExec = ENum_ProjectSetupOutExec::Exec_Release;
+        return;
+    }
+    
+    if (const UBDC_ConfigAndDebug_Settings* Settings = GetDefault<UBDC_ConfigAndDebug_Settings>())
+    {
+        StateTags = Settings->CurrentPlayStateTags;
+        switch(Settings->CurrentPlayState)
+        {
+            case ENum_ProjectSetupType::Setup_Release:
+            {
+                OutExec = ENum_ProjectSetupOutExec::Exec_Release;
+                break;
+            }
+            case ENum_ProjectSetupType::Setup_Debug:
+            {
+                OutExec = ENum_ProjectSetupOutExec::Exec_Debug;
+                break;
+            }
+            case ENum_ProjectSetupType::Setup_DebugNo:
+            {
+                OutExec = ENum_ProjectSetupOutExec::Exec_Debug;
+                break;
+            }
+            default:
+            {
+                break;
+            }
+        }
+    }
 }
 
+// =================================================================================================
 //~ Setters
 // =================================================================================================
 

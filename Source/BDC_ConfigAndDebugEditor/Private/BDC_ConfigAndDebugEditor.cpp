@@ -17,18 +17,14 @@
 #include "Framework/Commands/Commands.h"
 #include "Framework/Commands/UICommandInfo.h"
 #include "Widgets/Docking/SDockTab.h"
-#include "Editor/EditorEngine.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Widgets/SWeakWidget.h"
 #include "InputCoreTypes.h"
-#include "Framework/Commands/InputBindingManager.h"
 #include "Framework/Application/IInputProcessor.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SOverlay.h"
-#include "ColorPicker/ColorPickerManager.h"
-#include "ColorPicker/SColorPicker.h"
-#include "PaletteView/SCustomColorPickerWrapper.h"
+#include "Misc/ConfigCacheIni.h"
 
 #define LOCTEXT_NAMESPACE "FBDC_ConfigAndDebugEditorModule"
 
@@ -49,56 +45,75 @@ public:
 };
 #pragma endregion PluginCommands
 
+#pragma region UtilityFunctions
+static FKey GetEffectiveOverlayKey()
+{
+    UBDC_ConfigAndDebug_Settings* const Settings = GetMutableDefault<UBDC_ConfigAndDebug_Settings>();
+    if (Settings)
+    {
+        Settings->ReloadConfig();
+        const FKey FromSettings = Settings->OverlayHotkey;
+        if (FromSettings.IsValid())
+        {
+            return FromSettings;
+        }
+    }
+
+    FString RawKeyValue;
+    if (GConfig && GConfig->GetString(TEXT("/Script/BDC_ConfigAndDebug.BDC_ConfigAndDebug_Settings"), TEXT("OverlayHotkey"), RawKeyValue, GEditorPerProjectIni))
+    {
+        const FName KeyName(*RawKeyValue);
+        const FKey FromIni = FKey(KeyName);
+        if (FromIni.IsValid())
+        {
+            return FromIni;
+        }
+    }
+
+    return EKeys::Three;
+}
+#pragma endregion UtilityFunctions
+
 #pragma region InputProcessor
 class FOverlayInputProcessor : public IInputProcessor
 {
 public:
-	explicit FOverlayInputProcessor(FBDC_ConfigAndDebugEditorModule* const InModule, const FKey InKey)
-		: ModulePtr(InModule), OverlayKey(InKey)
-	{
-	}
+    explicit FOverlayInputProcessor(FBDC_ConfigAndDebugEditorModule* const InModule, const FKey InKey)
+        : ModulePtr(InModule), OverlayKey(InKey)
+    {
+    }
 
 	virtual ~FOverlayInputProcessor() override = default;
 
 	virtual void Tick(const float DeltaTime, FSlateApplication& SlateApp, TSharedRef<ICursor> Cursor) override {}
 
-	virtual bool HandleKeyDownEvent(FSlateApplication& SlateApp, const FKeyEvent& InKeyEvent) override
-	{
-		if (InKeyEvent.GetKey() == OverlayKey)
-		{
-			if (ModulePtr)
-			{
-				ModulePtr->ToggleOverlay();
-				return true;
-			}
-		}
-		return false;
-	}
+ virtual bool HandleKeyDownEvent(FSlateApplication& SlateApp, const FKeyEvent& InKeyEvent) override
+ {
+     const FKey CurrentOverlayKey = GetEffectiveOverlayKey();
+     if (InKeyEvent.GetKey() == CurrentOverlayKey)
+     {
+         if (ModulePtr)
+         {
+             ModulePtr->ToggleOverlay();
+             return true;
+         }
+     }
+     return false;
+ }
 
 private:
-	FBDC_ConfigAndDebugEditorModule* ModulePtr = nullptr;
-	FKey OverlayKey;
+    FBDC_ConfigAndDebugEditorModule* ModulePtr = nullptr;
+    FKey OverlayKey;
 };
 #pragma endregion InputProcessor
-
-#pragma region ColorPickerPaletteOverrides
-void FBDC_ConfigAndDebugEditorModule::CreateCustomColorPicker(TSharedRef<SWidget>& ReturnedWidget, const TSharedRef<FColorPickerArgs>& Args)
-{
-    ReturnedWidget = SNew(SCustomColorPickerWrapper)
-        .ColorPickerArgs(Args);
-}
-#pragma endregion ColorPickerPaletteOverrides
 
 #pragma region ModuleLifecycle
 void FBDC_ConfigAndDebugEditorModule::StartupModule()
 {
-	FOverlayCommands::Register();
-	PluginCommands = MakeShareable(new FUICommandList);
+    FOverlayCommands::Register();
+    PluginCommands = MakeShareable(new FUICommandList);
 
-	const UBDC_ConfigAndDebug_Settings* Settings;
-    UBDC_ConfigAndDebug_Settings::GetProjectPaletteSettings(Settings);
-
-	OverlayKey = Settings ? Settings->OverlayHotkey : EKeys::Three;
+    OverlayKey = GetEffectiveOverlayKey();
 
 	PluginCommands->MapAction(
 		FOverlayCommands::Get().ToggleOverlay,
@@ -117,23 +132,10 @@ void FBDC_ConfigAndDebugEditorModule::StartupModule()
     Section.AddEntry(FToolMenuEntry::InitWidget("ConfigAndDebugPlayWidget", SNew(SBDC_ConfigAndDebug_PlayWidget), FText::GetEmpty(), true));
 
 	OverlayWidget = SNew(SBDC_ConfigAndDebug_OverlayWidget);
-    
-    if (FModuleManager::Get().IsModuleLoaded("ColorPicker"))
-    {
-        IColorPickerManagerModule& ColorPickerModule = FModuleManager::LoadModuleChecked<IColorPickerManagerModule>("ColorPicker");
-        
-        CustomColorPickerCreationHandle = ColorPickerModule.OnCreateColorPicker()
-            .AddRaw(this, &FBDC_ConfigAndDebugEditorModule::CreateCustomColorPicker);
-    }
 }
 
 void FBDC_ConfigAndDebugEditorModule::ShutdownModule()
 {
-    if (FModuleManager::Get().IsModuleLoaded("ColorPicker"))
-    {
-        IColorPickerManagerModule& ColorPickerModule = FModuleManager::GetModuleChecked<IColorPickerManagerModule>("ColorPicker");
-        ColorPickerModule.OnCreateColorPicker().Remove(CustomColorPickerCreationHandle);
-    }
 	if (OverlayInputProcessor.IsValid())
 	{
 		if (FSlateApplication::IsInitialized())
@@ -159,13 +161,16 @@ void FBDC_ConfigAndDebugEditorModule::ShutdownModule()
 #pragma region Utility
 void FBDC_ConfigAndDebugEditorModule::ToggleOverlay()
 {
-	if (const UBDC_ConfigAndDebug_Settings* Settings; UBDC_ConfigAndDebug_Settings::GetProjectPaletteSettings(Settings))
-	{
-		if (Settings->CurrentPlayState != ENum_ProjectSetupType::Setup_Debug)
-		{
-			return;
-		}
-	}
+    UBDC_ConfigAndDebug_Settings* const MutableSettings = GetMutableDefault<UBDC_ConfigAndDebug_Settings>();
+    if (MutableSettings)
+    {
+        MutableSettings->ReloadConfig();
+    }
+
+    if (!MutableSettings || MutableSettings->CurrentPlayState != ENum_ProjectSetupType::Setup_Debug)
+    {
+        return;
+    }
 
 	if (!OverlayWidget.IsValid() || !GEngine || !GEngine->GameViewport)
 	{

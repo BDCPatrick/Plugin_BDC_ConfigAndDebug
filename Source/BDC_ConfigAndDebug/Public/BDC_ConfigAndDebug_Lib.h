@@ -95,21 +95,16 @@ public:
 #pragma endregion
 
 #pragma region StringSystem
-	/** A more advanced "Contains" function */
-    UFUNCTION(BlueprintPure, Category = "StringSystem")
-	static void StringAdvancedCheck(FString Input, ENum_StringCheck CheckupType, FString Substring, bool bSearchFromEnd, bool& bResult, FString& Output); //TODO, add definition to cpp file
-	
-	/** A more advanced "Replace" function */
-    UFUNCTION(BlueprintPure, Category = "StringSystem")
-	static void StringAdvancedReplace(FString Input, ENum_StringReplace ReplaceType, FString SearchFor, FString ReplaceWith, bool bStartFromEnd, int32 SkipCases, FString& Output); //TODO, add definition to cpp file (SkipCases minimum 0, replace with 0 if less!!)
-	
-	/** Reverses the glyph order based on ReverseType */
-    UFUNCTION(BlueprintPure, Category = "StringSystem")
-	static void StringReverse(FString Input, ENum_StringSort ReverseType, FString& Output); //TODO, add definition to cpp file
-	
-	/** Takes the String parts by JiggleType, and randomly exchange the glyphs.
-	* Keeps sentences solid, so spaces (" "), points (".") and semicolons (";") keep their places, but the corresponding glyphs jiggle.*/
-    UFUNCTION(BlueprintPure, Category = "StringSystem")
-	static void StringJiggle(FString Input, ENum_StringSort JiggleType, FString& Output); //TODO, add definition to cpp file
+    UFUNCTION(BlueprintPure, Category = "StringSystem", meta=(DisplayName="String Advanced Check"))
+    static void StringAdvancedCheck(FString Input, ENum_StringCheck CheckupType, FString Substring, bool bUseCaseSensitive, bool bSearchFromEnd, bool& bResult, FString& Output);
+
+    UFUNCTION(BlueprintPure, Category = "StringSystem", meta=(DisplayName="String Advanced Replace"))
+    static void StringAdvancedReplace(FString Input, ENum_StringReplace ReplaceType, FString SearchFor, FString ReplaceWith, bool bUseCaseSensitive, bool bStartFromEnd, int32 SkipCases, FString& Output);
+
+    UFUNCTION(BlueprintPure, Category = "StringSystem", meta=(DisplayName="String Reverse"))
+    static void StringReverse(FString Input, ENum_StringSort ReverseType, FString& Output);
+
+    UFUNCTION(BlueprintPure, Category = "StringSystem", meta=(DisplayName="String Jiggle"))
+    static void StringJiggle(FString Input, ENum_StringSort JiggleType, FString& Output);
 #pragma endregion
 };
