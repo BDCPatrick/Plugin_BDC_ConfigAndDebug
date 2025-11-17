@@ -1,13 +1,13 @@
 ﻿/* Copyright © beginning at 2025 - BlackDevilCreations
 * Author: Patrick Wenzel
- * All rights reserved.
- *
- * This file is part of a BlackDevilCreations project and may not be distributed, copied,
- * or modified without prior written permission from BlackDevilCreations.
- *
- * Unreal Engine and its associated trademarks are property of Epic Games, Inc.
- * and are used with permission.
- */
+* All rights reserved.
+*
+* This file and the corresponding Definition is part of a BlackDevilCreations project and may not be distributed, copied,
+* or modified without prior written permission from BlackDevilCreations.
+*
+* Unreal Engine and its associated trademarks are property of Epic Games, Inc.
+* and are used with permission.
+*/
 #include "BDC_ConfigAndDebugEditor.h"
 #include "BDC_ConfigAndDebug_Settings.h"
 #include "LevelEditor.h"
@@ -26,37 +26,40 @@
 #include "Framework/Application/IInputProcessor.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SOverlay.h"
+#include "ColorPicker/ColorPickerManager.h"
+#include "ColorPicker/SColorPicker.h"
+#include "PaletteView/SCustomColorPickerWrapper.h"
 
 #define LOCTEXT_NAMESPACE "FBDC_ConfigAndDebugEditorModule"
 
+#pragma region PluginCommands
 class FOverlayCommands : public TCommands<FOverlayCommands>
 {
 public:
-	FOverlayCommands(): TCommands<FOverlayCommands>(TEXT("BDC_ConfigAndDebug"), NSLOCTEXT("Contexts", "BDC_ConfigAndDebug",  "BDC Config and Debug"), NAME_None, "EditorStyle")
+	FOverlayCommands(): TCommands<FOverlayCommands>(TEXT("BDC_ConfigAndDebug"), NSLOCTEXT("Contexts", "BDC_ConfigAndDebug", "BDC Config and Debug"), NAME_None, "EditorStyle")
 	{
 	}
 
 	virtual void RegisterCommands() override
 	{
-		// Default chord is empty; we handle hotkey via input preprocessor using settings
 		UI_COMMAND(ToggleOverlay, "Toggle Overlay", "Toggles the actor/function overlay.", EUserInterfaceActionType::Button, FInputChord());
 	}
 
 	TSharedPtr<FUICommandInfo> ToggleOverlay;
 };
+#pragma endregion PluginCommands
 
-// Slate input processor to capture the overlay hotkey even when game viewport has focus
+#pragma region InputProcessor
 class FOverlayInputProcessor : public IInputProcessor
 {
 public:
-	explicit FOverlayInputProcessor(FBDC_ConfigAndDebugEditorModule* InModule, FKey InKey)
+	explicit FOverlayInputProcessor(FBDC_ConfigAndDebugEditorModule* const InModule, const FKey InKey)
 		: ModulePtr(InModule), OverlayKey(InKey)
 	{
 	}
 
 	virtual ~FOverlayInputProcessor() override = default;
 
-	// Required by IInputProcessor in UE 5.6 (pure virtual)
 	virtual void Tick(const float DeltaTime, FSlateApplication& SlateApp, TSharedRef<ICursor> Cursor) override {}
 
 	virtual bool HandleKeyDownEvent(FSlateApplication& SlateApp, const FKeyEvent& InKeyEvent) override
@@ -76,16 +79,25 @@ private:
 	FBDC_ConfigAndDebugEditorModule* ModulePtr = nullptr;
 	FKey OverlayKey;
 };
+#pragma endregion InputProcessor
 
+#pragma region ColorPickerPaletteOverrides
+void FBDC_ConfigAndDebugEditorModule::CreateCustomColorPicker(TSharedRef<SWidget>& ReturnedWidget, const TSharedRef<FColorPickerArgs>& Args)
+{
+    ReturnedWidget = SNew(SCustomColorPickerWrapper)
+        .ColorPickerArgs(Args);
+}
+#pragma endregion ColorPickerPaletteOverrides
+
+#pragma region ModuleLifecycle
 void FBDC_ConfigAndDebugEditorModule::StartupModule()
 {
-	// Register commands and bind hotkey
 	FOverlayCommands::Register();
 	PluginCommands = MakeShareable(new FUICommandList);
 
-	const UBDC_ConfigAndDebug_Settings* Settings = GetDefault<UBDC_ConfigAndDebug_Settings>();
+	const UBDC_ConfigAndDebug_Settings* Settings;
+    UBDC_ConfigAndDebug_Settings::GetProjectPaletteSettings(Settings);
 
-	// Read overlay key from settings
 	OverlayKey = Settings ? Settings->OverlayHotkey : EKeys::Three;
 
 	PluginCommands->MapAction(
@@ -93,27 +105,61 @@ void FBDC_ConfigAndDebugEditorModule::StartupModule()
 		FExecuteAction::CreateRaw(this, &FBDC_ConfigAndDebugEditorModule::ToggleOverlay)
 	);
 
-	// Register the command with the Level Editor's global actions so it works in editor and during PIE
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetGlobalLevelEditorActions()->Append(PluginCommands.ToSharedRef());
 
-	// Register input preprocessor to catch the overlay key even when PIE has focus
 	OverlayInputProcessor = MakeShared<FOverlayInputProcessor>(this, OverlayKey);
 	FSlateApplication::Get().RegisterInputPreProcessor(OverlayInputProcessor.ToSharedRef());
 
-    // Register the toolbar widget
     FToolMenuOwnerScoped OwnerScoped(this);
     UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.PlayToolBar");
     FToolMenuSection& Section = ToolbarMenu->FindOrAddSection("Play");
     Section.AddEntry(FToolMenuEntry::InitWidget("ConfigAndDebugPlayWidget", SNew(SBDC_ConfigAndDebug_PlayWidget), FText::GetEmpty(), true));
 
-	// Create the overlay widget, but don't show it yet
 	OverlayWidget = SNew(SBDC_ConfigAndDebug_OverlayWidget);
+    
+    if (FModuleManager::Get().IsModuleLoaded("ColorPicker"))
+    {
+        IColorPickerManagerModule& ColorPickerModule = FModuleManager::LoadModuleChecked<IColorPickerManagerModule>("ColorPicker");
+        
+        CustomColorPickerCreationHandle = ColorPickerModule.OnCreateColorPicker()
+            .AddRaw(this, &FBDC_ConfigAndDebugEditorModule::CreateCustomColorPicker);
+    }
 }
 
+void FBDC_ConfigAndDebugEditorModule::ShutdownModule()
+{
+    if (FModuleManager::Get().IsModuleLoaded("ColorPicker"))
+    {
+        IColorPickerManagerModule& ColorPickerModule = FModuleManager::GetModuleChecked<IColorPickerManagerModule>("ColorPicker");
+        ColorPickerModule.OnCreateColorPicker().Remove(CustomColorPickerCreationHandle);
+    }
+	if (OverlayInputProcessor.IsValid())
+	{
+		if (FSlateApplication::IsInitialized())
+		{
+			FSlateApplication::Get().UnregisterInputPreProcessor(OverlayInputProcessor.ToSharedRef());
+		}
+		OverlayInputProcessor.Reset();
+	}
+
+	const bool bCanRemoveOverlay = bOverlayVisible && (GEngine != nullptr) && (GEngine->GameViewport != nullptr) && OverlayContainer.IsValid();
+	if (bCanRemoveOverlay)
+	{
+		GEngine->GameViewport->RemoveViewportWidgetContent(OverlayContainer.ToSharedRef());
+		OverlayContainer.Reset();
+		bOverlayVisible = false;
+	}
+
+	UToolMenus::UnregisterOwner(this);
+	FOverlayCommands::Unregister();
+}
+#pragma endregion ModuleLifecycle
+
+#pragma region Utility
 void FBDC_ConfigAndDebugEditorModule::ToggleOverlay()
 {
-	if (const UBDC_ConfigAndDebug_Settings* Settings = GetDefault<UBDC_ConfigAndDebug_Settings>())
+	if (const UBDC_ConfigAndDebug_Settings* Settings; UBDC_ConfigAndDebug_Settings::GetProjectPaletteSettings(Settings))
 	{
 		if (Settings->CurrentPlayState != ENum_ProjectSetupType::Setup_Debug)
 		{
@@ -152,31 +198,7 @@ void FBDC_ConfigAndDebugEditorModule::ToggleOverlay()
 		OverlayWidget->RefreshActorList();
 	}
 }
-
-void FBDC_ConfigAndDebugEditorModule::ShutdownModule()
-{
-	// Unregister input preprocessor (only if Slate is still initialized)
-	if (OverlayInputProcessor.IsValid())
-	{
-		if (FSlateApplication::IsInitialized())
-		{
-			FSlateApplication::Get().UnregisterInputPreProcessor(OverlayInputProcessor.ToSharedRef());
-		}
-		OverlayInputProcessor.Reset();
-	}
-
-	// Ensure we remove any overlay content from the viewport safely
-	const bool bCanRemoveOverlay = bOverlayVisible && (GEngine != nullptr) && (GEngine->GameViewport != nullptr) && OverlayContainer.IsValid();
-	if (bCanRemoveOverlay)
-	{
-		GEngine->GameViewport->RemoveViewportWidgetContent(OverlayContainer.ToSharedRef());
-		OverlayContainer.Reset();
-		bOverlayVisible = false;
-	}
-
-	UToolMenus::UnregisterOwner(this);
-	FOverlayCommands::Unregister();
-}
+#pragma endregion Utility
 
 #undef LOCTEXT_NAMESPACE
 

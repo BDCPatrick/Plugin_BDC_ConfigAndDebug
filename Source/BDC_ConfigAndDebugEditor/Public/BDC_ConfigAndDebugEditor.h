@@ -16,6 +16,7 @@
 class SBDC_ConfigAndDebug_OverlayWidget;
 class IInputProcessor;
 class SOverlay;
+class SCustomColorPickerWrapper;
 
 class FBDC_ConfigAndDebugEditorModule : public IModuleInterface
 {
@@ -23,26 +24,16 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	/** Toggles the visibility of the overlay widget. */
 	void ToggleOverlay();
 
 private:
 
-	/** The overlay widget instance. */
 	TSharedPtr<SBDC_ConfigAndDebug_OverlayWidget> OverlayWidget;
-
-	/** Command list for handling keybindings. */
 	TSharedPtr<FUICommandList> PluginCommands;
-
-	/** Tracks whether overlay is currently added to the viewport. */
 	bool bOverlayVisible = false;
-
-	/** The hotkey from settings. */
 	FKey OverlayKey;
-
-	/** Input preprocessor to catch the overlay key during PIE. */
 	TSharedPtr<IInputProcessor> OverlayInputProcessor;
-
-	/** Container added to the GameViewport to position the overlay top-right. */
 	TSharedPtr<SOverlay> OverlayContainer;
+	FDelegateHandle CustomColorPickerCreationHandle;
+	TSharedRef<SWidget> CreateCustomColorPicker(const TSharedRef<FColorPickerArgs>& Args);
 };
