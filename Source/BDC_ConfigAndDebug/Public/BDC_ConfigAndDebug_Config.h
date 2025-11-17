@@ -22,7 +22,8 @@ class BDC_CONFIGANDDEBUG_API UBDC_ConfigAndDebug_Config : public UBlueprintFunct
 
 public:
 
-	//~ Begin Getters (Runtime)
+	// =================================================================================================
+	// Project Settings getter
 	// =================================================================================================
 
 	/** Gets the project's name. */
@@ -111,7 +112,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "BDC|Config and Debug", meta = (DisplayName = "Get Play-Setup", Keywords = "Play Setup", ExpandEnumAsExecs = "OutExec"))
 	static void GetCurrentPlaySetup(ENum_ProjectSetupOutExec& OutExec, FGameplayTagContainer& StateTags);
 
-	//~ Begin Setters (Editor Only)
+	// =================================================================================================
+	// Project Settings Setter (Editor only)
 	// =================================================================================================
 
 #if WITH_EDITOR

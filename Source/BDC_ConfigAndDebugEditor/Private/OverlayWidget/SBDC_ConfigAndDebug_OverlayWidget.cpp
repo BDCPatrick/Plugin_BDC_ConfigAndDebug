@@ -36,7 +36,6 @@ void SBDC_ConfigAndDebug_OverlayWidget::Construct(const FArguments& InArgs)
 			[
 				SNew(SVerticalBox)
 
-				// Refresh Button
 				+ SVerticalBox::Slot()
 				.AutoHeight()
 				.Padding(2.0f)
@@ -50,7 +49,6 @@ void SBDC_ConfigAndDebug_OverlayWidget::Construct(const FArguments& InArgs)
 					]
 				]
 
-				// Actor List
 				+ SVerticalBox::Slot()
 				.FillHeight(1.0f)
 				[
@@ -75,14 +73,12 @@ void SBDC_ConfigAndDebug_OverlayWidget::RefreshActorList()
 		.Text(FText::FromString(TEXT("Refreshing...")))
 	];
 
-	// Ensure all world access happens on the game thread to avoid IsInGameThread assertions
 	RefreshTaskFuture = Async(EAsyncExecution::TaskGraphMainThread, [this]()
 	{
 		TArray<FCallableActor> CallableActors;
 		UWorld* World = nullptr;
 		if (GEditor)
 		{
-			// Prefer PIE world when playing, otherwise use the editor world
 			if (GEditor->PlayWorld)
 			{
 				World = GEditor->PlayWorld.Get();
@@ -153,7 +149,6 @@ void SBDC_ConfigAndDebug_OverlayWidget::PopulateList(const TArray<FCallableActor
 		[
 			SNew(SVerticalBox)
 
-			// Actor Name
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			[
@@ -168,7 +163,6 @@ void SBDC_ConfigAndDebug_OverlayWidget::PopulateList(const TArray<FCallableActor
 				]
 			]
 
-			// Function List
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			[
