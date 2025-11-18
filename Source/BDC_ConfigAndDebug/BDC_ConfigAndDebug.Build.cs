@@ -26,22 +26,23 @@ public class BDC_ConfigAndDebug : ModuleRules
 		);
 			
 		
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"CoreUObject",
-				"Engine",
-				"Slate",
-				"SlateCore",
-				"ApplicationCore",
-				"UMG",
-				"DeveloperSettings", 
-				"MoviePlayer",
-				"EngineSettings",
-				"AssetRegistry",
-				"RenderCore"
-			}
-		);
+  PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "CoreUObject",
+                "Engine",
+                "Slate",
+                "SlateCore",
+                "ApplicationCore",
+                "UMG",
+                "DeveloperSettings", 
+                "MoviePlayer",
+                "EngineSettings",
+                "AssetRegistry",
+                "RenderCore",
+                "RHI"
+            }
+        );
 
 		if (Target.Platform == UnrealTargetPlatform.Win64)
 		{

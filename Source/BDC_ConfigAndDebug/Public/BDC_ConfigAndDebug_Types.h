@@ -82,6 +82,13 @@ enum class E_ResSortingOrder : uint8
     LowestToHighest   UMETA(DisplayName = "Lowest to Highest"),
     HighestToLowest   UMETA(DisplayName = "Highest to Lowest")
 };
+
+UENUM(BlueprintType)
+enum class E_ResType : uint8
+{
+	ResFullscreenOnly   UMETA(DisplayName = "Fullscreen only"),
+	ResFullscreenAndWindow   UMETA(DisplayName = "Fullscreen and Window")
+};
  
  UENUM(BlueprintType)
  enum class ENum_StringCheck : uint8

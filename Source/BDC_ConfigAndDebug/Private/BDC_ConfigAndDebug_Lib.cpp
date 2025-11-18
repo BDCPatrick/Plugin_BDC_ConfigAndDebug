@@ -17,6 +17,7 @@
 #include "GameFramework/GameUserSettings.h"
 #include "Widgets/SWindow.h"
 #include "Internationalization/Regex.h"
+#include "RHI.h"
 
 #pragma region MonitorAPI
 FMonitorInformations UBDC_ConfigAndDebug_Lib::GetMonitorInfoByIndex(int32 OfIndex)
@@ -117,6 +118,75 @@ void UBDC_ConfigAndDebug_Lib::SetSelectedMonitor(int32 NewMonitorIndex)
     GameWin->SetWindowMode(CurrentWindowMode);
 
     UE_LOG(LogTemp, Display, TEXT("SetSelectedMonitor: Switched to monitor %d at (%d,%d)."), NewMonitorIndex, WindowPosX, WindowPosY);
+}
+
+TArray<FString> UBDC_ConfigAndDebug_Lib::GetSupportedResolutions(FIntPoint MinResolution, FIntPoint MaxResolution, float AspectRatio, E_ResType IncludeResolutionsOf)
+{
+    TArray<FString> Resolutions;
+    Resolutions.Reserve(64);
+
+    const auto InBounds = [&MinResolution, &MaxResolution](const int32 W, const int32 H) -> bool
+    {
+        return (W >= MinResolution.X && W <= MaxResolution.X && H >= MinResolution.Y && H <= MaxResolution.Y);
+    };
+
+    const auto MatchesAspect = [AspectRatio](const int32 W, const int32 H) -> bool
+    {
+        if (AspectRatio <= 0.0f)
+        {
+            return true;
+        }
+        const float ResAspect = static_cast<float>(W) / static_cast<float>(H);
+        return FMath::IsNearlyEqual(ResAspect, AspectRatio, 0.01f);
+    };
+
+    auto AddUnique = [&Resolutions](const int32 W, const int32 H)
+    {
+        const FString Entry = FString::Printf(TEXT("%dx%d"), W, H);
+        if (!Resolutions.Contains(Entry))
+        {
+            Resolutions.Add(Entry);
+        }
+    };
+
+    FScreenResolutionArray SupportedResolutions;
+    if (RHIGetAvailableResolutions(SupportedResolutions, false))
+    {
+        for (const FScreenResolutionRHI& Resolution : SupportedResolutions)
+        {
+            const int32 W = static_cast<int32>(Resolution.Width);
+            const int32 H = static_cast<int32>(Resolution.Height);
+            if (!InBounds(W, H))
+            {
+                continue;
+            }
+            if (!MatchesAspect(W, H))
+            {
+                continue;
+            }
+            AddUnique(W, H);
+        }
+    }
+
+    if (IncludeResolutionsOf == E_ResType::ResFullscreenAndWindow)
+    {
+        for (int32 H = MinResolution.Y; H <= MaxResolution.Y; ++H)
+        {
+            const float TargetW = AspectRatio * static_cast<float>(H);
+            const int32 W = FMath::RoundToInt(TargetW);
+            if (!InBounds(W, H))
+            {
+                continue;
+            }
+            if (!MatchesAspect(W, H))
+            {
+                continue;
+            }
+            AddUnique(W, H);
+        }
+    }
+
+    return Resolutions;
 }
 #pragma endregion
 

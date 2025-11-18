@@ -20,16 +20,18 @@ class BDC_CONFIGANDDEBUG_API UBDC_ConfigAndDebug_Lib : public UBlueprintFunction
 
 public:
 #pragma region MonitorAPI
-	UFUNCTION(BlueprintPure, Category="BDC|ConfigAndDebug|Monitor Utility", meta=(DisplayName="Get Monitor Info By Index"))
-	static FMonitorInformations GetMonitorInfoByIndex(int32 OfIndex); 
+    UFUNCTION(BlueprintPure, Category="BDC|ConfigAndDebug|Monitor Utility", meta=(DisplayName="Get Monitor Info By Index"))
+    static FMonitorInformations GetMonitorInfoByIndex(int32 OfIndex); 
 
-	UFUNCTION(BlueprintPure, Category="BDC|ConfigAndDebug|Monitor Utility", meta=(DisplayName="Get All Monitor Infos"))
-	static TArray<FMonitorInformations> GetAllMonitorInfo();
+    UFUNCTION(BlueprintPure, Category="BDC|ConfigAndDebug|Monitor Utility", meta=(DisplayName="Get All Monitor Infos"))
+    static TArray<FMonitorInformations> GetAllMonitorInfo();
 
-	UFUNCTION(BlueprintCallable, Category="BDC|ConfigAndDebug|Monitor Utility", meta=(DisplayName="Set Selected Monitor"))
-	static void SetSelectedMonitor(int32 NewMonitorIndex);
+    UFUNCTION(BlueprintCallable, Category="BDC|ConfigAndDebug|Monitor Utility", meta=(DisplayName="Set Selected Monitor"))
+    static void SetSelectedMonitor(int32 NewMonitorIndex);
+
+    UFUNCTION(BlueprintPure, Category = "BDC|ConfigAndDebug|Monitor Utility", meta=(DisplayName="Get Supported Resolutions"))
+    static TArray<FString> GetSupportedResolutions(FIntPoint MinResolution, FIntPoint MaxResolution, float AspectRatio, E_ResType IncludeResolutionsOf);
 #pragma endregion
-
 #pragma region ArrayAPI
 	UFUNCTION(BlueprintPure, Category = "BDC|ConfigAndDebug|Array Utilitiy", meta = (DisplayName = "Dimension To 1D Index", CompactNodeTitle = "DimTo1D"))
 	static void DimensionTo1D(const TArray<int32>& ArrayCoords, const TArray<int32>& DimensionSizes, int32& Out1DIndex);
@@ -93,7 +95,6 @@ public:
     UFUNCTION(BlueprintPure, Category = "SortingUtility|Resolution", meta = (Keywords = "sort array resolution graphics settings"))
     static void SortResolutionArray(const TArray<FString>& InResolutions, E_ResSortingOrder SortingOrder, UPARAM(DisplayName="Sorted Array") TArray<FString>& OutResolutions);
 #pragma endregion
-
 #pragma region StringSystem
     UFUNCTION(BlueprintPure, Category = "StringSystem", meta=(DisplayName="String Advanced Check"))
     static void StringAdvancedCheck(FString Input, ENum_StringCheck CheckupType, FString Substring, bool bUseCaseSensitive, bool bSearchFromEnd, bool& bResult, FString& Output);
