@@ -6,3 +6,5 @@ Wiki: [BDC_ConfigAndDebug/wiki](https://github.com/BDCPatrick/BDC_ConfigAndDebug
 A free Plugin allowing you to retreive the project Settings like Name, Description, version, Company and such, at Runtime + Using the Setter Functions to set those values via Editor utilities.
 
 It also provides functionality for a fixed Debug and Release Play-Mode, some Array handling, and Monitor switching Utility.
+
+Support: [ConfigAndDebug Discord](https://discord.gg/up8suP28V8)
