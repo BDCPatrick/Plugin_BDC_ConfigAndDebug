@@ -110,28 +110,31 @@ private:
 #pragma region ModuleLifecycle
 void FBDC_ConfigAndDebugEditorModule::StartupModule()
 {
-    FOverlayCommands::Register();
-    PluginCommands = MakeShareable(new FUICommandList);
+	if (!IsRunningCommandlet())
+	{
+		FOverlayCommands::Register();
+		PluginCommands = MakeShareable(new FUICommandList);
 
-    OverlayKey = GetEffectiveOverlayKey();
+		OverlayKey = GetEffectiveOverlayKey();
 
-	PluginCommands->MapAction(
-		FOverlayCommands::Get().ToggleOverlay,
-		FExecuteAction::CreateRaw(this, &FBDC_ConfigAndDebugEditorModule::ToggleOverlay)
-	);
+		PluginCommands->MapAction(
+			FOverlayCommands::Get().ToggleOverlay,
+			FExecuteAction::CreateRaw(this, &FBDC_ConfigAndDebugEditorModule::ToggleOverlay)
+		);
 
-	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	LevelEditorModule.GetGlobalLevelEditorActions()->Append(PluginCommands.ToSharedRef());
+		FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+		LevelEditorModule.GetGlobalLevelEditorActions()->Append(PluginCommands.ToSharedRef());
 
-	OverlayInputProcessor = MakeShared<FOverlayInputProcessor>(this, OverlayKey);
-	FSlateApplication::Get().RegisterInputPreProcessor(OverlayInputProcessor.ToSharedRef());
+		OverlayInputProcessor = MakeShared<FOverlayInputProcessor>(this, OverlayKey);
+		FSlateApplication::Get().RegisterInputPreProcessor(OverlayInputProcessor.ToSharedRef());
 
-    FToolMenuOwnerScoped OwnerScoped(this);
-    UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.PlayToolBar");
-    FToolMenuSection& Section = ToolbarMenu->FindOrAddSection("Play");
-    Section.AddEntry(FToolMenuEntry::InitWidget("ConfigAndDebugPlayWidget", SNew(SBDC_ConfigAndDebug_PlayWidget), FText::GetEmpty(), true));
+		FToolMenuOwnerScoped OwnerScoped(this);
+		UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.PlayToolBar");
+		FToolMenuSection& Section = ToolbarMenu->FindOrAddSection("Play");
+		Section.AddEntry(FToolMenuEntry::InitWidget("ConfigAndDebugPlayWidget", SNew(SBDC_ConfigAndDebug_PlayWidget), FText::GetEmpty(), true));
 
-	OverlayWidget = SNew(SBDC_ConfigAndDebug_OverlayWidget);
+		OverlayWidget = SNew(SBDC_ConfigAndDebug_OverlayWidget);
+	}
 }
 
 void FBDC_ConfigAndDebugEditorModule::ShutdownModule()
