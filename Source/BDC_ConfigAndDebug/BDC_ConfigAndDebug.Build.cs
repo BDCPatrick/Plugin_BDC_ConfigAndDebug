@@ -46,9 +46,9 @@ public class BDC_ConfigAndDebug : ModuleRules
 
 		if (Target.Platform == UnrealTargetPlatform.Win64)
 		{
-			PublicAdditionalLibraries.Add("Dxva2.lib");
-			PublicAdditionalLibraries.Add("Setupapi.lib");
-			PublicAdditionalLibraries.Add("Propsys.lib");
+			PublicSystemLibraries.Add("Dxva2.lib");
+			PublicSystemLibraries.Add("Setupapi.lib");
+			PublicSystemLibraries.Add("Propsys.lib");
 		}
 	}
 }
