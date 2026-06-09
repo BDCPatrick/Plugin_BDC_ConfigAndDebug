@@ -15,6 +15,9 @@
   "IsExperimentalVersion": false,
   "Installed": false,
   "EngineVersion": "5.7",
+  "SupportedTargetPlatforms": [
+    "Win64"
+  ],
   "Modules": [
     {
       "Name": "BDC_ConfigAndDebug",
